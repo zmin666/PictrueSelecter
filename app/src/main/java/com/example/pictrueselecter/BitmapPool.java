@@ -8,7 +8,6 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
-import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
@@ -16,19 +15,16 @@ import androidx.annotation.Nullable;
 import androidx.collection.LruCache;
 
 import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 
 public class BitmapPool {
     static LruCache<String, Bitmap> lruCache;
     static Context mContext;
-    ImageView mImageView;
-    private int width = 0;
-    private int height = 0;
-    HashMap<String, ImageView> mImageViewMap = new HashMap<>();
-    ExecutorService cachedThreadPool = Executors.newFixedThreadPool(8);
+//    private int width = 0;
+//    private int height = 0;
+//    ImageView mImageView;
+//    HashMap<String, ImageView> mImageViewMap = new HashMap<>();
+//    ExecutorService cachedThreadPool = Executors.newFixedThreadPool(8);
 
     private BitmapPool() {
     }
@@ -59,7 +55,7 @@ public class BitmapPool {
     public Bitmap getBitmap(String path) {
         Bitmap bitmap = lruCache.get(path);
         BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize = 3;
+        options.inSampleSize = 4;
         options.inPreferredConfig = Bitmap.Config.RGB_565;
         if (bitmap == null) {
             Bitmap bitmap1 = null;
@@ -74,19 +70,11 @@ public class BitmapPool {
                 bitmap1 = BitmapFactory.decodeFile(path, options);
             }
 
-            if (bitmap1 != null) {
-//                Matrix matrix = new Matrix();
-//                matrix.setScale(0.1f, 0.1f);
-//                Bitmap mSrcBitmap = Bitmap.createBitmap(bitmap1, 0, 0, bitmap1.getWidth(), bitmap1.getHeight(), matrix, true);
-//                lruCache.put(path, mSrcBitmap);
-                if (width != 0 && height != 0) { //压缩
-                    Bitmap bitmap2 = Bitmap.createScaledBitmap(bitmap1, width, height, true);
-                    lruCache.put(path, bitmap2);
-                    return bitmap2;
-                }
-                return bitmap1;
-            }
-            return null;
+            Matrix matrix = new Matrix();
+            matrix.setScale(0.5f, 0.5f);
+            Bitmap bitmap2 = Bitmap.createBitmap(bitmap1, 0, 0, bitmap1.getWidth(), bitmap1.getHeight(), matrix, true);
+            lruCache.put(path, bitmap2);
+            return bitmap2;
         }
         return bitmap;
     }
@@ -137,36 +125,24 @@ public class BitmapPool {
     }
 
     public void into(ImageView imageView, String path) {
-        this.mImageView = imageView;
-        if (imageView != null && (width == 0 || height == 0)) {
-            imageView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    if (width == 0 || height == 0) {
-                        width = imageView.getMeasuredWidth();
-                        height = imageView.getMeasuredHeight();
-                        load(imageView, path);
-                    }
-                }
-            });
-        } else {
-            load(imageView,path);
-        }
+        imageView.setImageBitmap(getBitmap(path));
     }
 
-    public void load(ImageView iv, String path) {
-        cachedThreadPool.execute(new Runnable() {
-            @Override
-            public void run() {
-                final String tempPath = path;
-                Bitmap bitmap = getBitmap(tempPath);
-                iv.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        iv.setImageBitmap(bitmap);
-                    }
-                });
-            }
-        });
-    }
+//    public void into(ImageView imageView, String path) {
+//        this.mImageView = imageView;
+//        if (imageView != null && (width == 0 || height == 0)) {
+//            imageView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+//                @Override
+//                public void onGlobalLayout() {
+//                    if (width == 0 || height == 0) {
+//                        width = imageView.getMeasuredWidth();
+//                        height = imageView.getMeasuredHeight();
+//                        imageView.setImageBitmap(getBitmap(path));
+//                    }
+//                }
+//            });
+//        } else {
+//            imageView.setImageBitmap(getBitmap(path));
+//        }
+//    }
 }

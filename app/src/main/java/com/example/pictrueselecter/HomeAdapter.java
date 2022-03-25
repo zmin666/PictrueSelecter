@@ -42,8 +42,6 @@ public class HomeAdapter extends RecyclerView.Adapter<HomeAdapter.ItemViewHolder
             iv.setImageResource(R.mipmap.ic_launcher);
         } else {
             BitmapPool.getInstance().with(context).into(iv,path);
-//            BitmapPool.getInstance(context.getApplicationContext()).measureImageView(iv);
-//            iv.setImageBitmap(BitmapPool.getInstance(context.getApplicationContext()).getBitmap(path));
         }
         ivLocation.setVisibility(mediaList.get(position).hasLocation ? View.VISIBLE : View.INVISIBLE);
     }
